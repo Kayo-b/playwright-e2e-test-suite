@@ -1,5 +1,6 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
+import { LoginPage } from './LoginPage';
 
 export class RegisterPage extends BasePage {
   readonly container: Locator;
@@ -22,7 +23,12 @@ export class RegisterPage extends BasePage {
   }
 
   async navigate() {
-    await this.goto('/register');
+    const loginPage = new LoginPage(this.page);
+    await loginPage.navigate();
+    await loginPage.registerLink.click();
+    await expect(this.container).toBeVisible({ timeout: 2000 });
+    const pageUrl = this.page.url();
+    expect(pageUrl).toContain('/register');
   }
 
   async register(name: string, email: string, password: string) {

@@ -8,6 +8,7 @@ export class HomePage extends BasePage {
   readonly postTextArea: Locator;
   readonly postButton: Locator;
   readonly posts: Locator;
+  readonly homeSbBtn
 
   constructor(page: Page) {
     super(page);
@@ -17,10 +18,20 @@ export class HomePage extends BasePage {
     this.postTextArea = page.getByTestId('create-post-textarea');
     this.postButton = page.getByTestId('create-post-submit-button');
     this.posts = page.getByTestId('post-container');
+    this.homeSbBtn = page.getByTestId('sidebar-home-link');
   }
 
   async navigate() {
-    await this.goto('/homepage');
+    const loginPage = new (require('./LoginPage').LoginPage)(this.page);
+    await loginPage.navigate();
+    await loginPage.loginAsGuest();
+  }
+
+  async clickHomeBtn() {
+    await this.page.evaluate(() => {
+      console.log('click home btn')
+    })
+    await this.homeSbBtn.click();
   }
 
   async createPost(content: string) {

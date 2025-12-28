@@ -1,5 +1,6 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
+import { LoginPage } from './LoginPage';
 
 export class ResetPage extends BasePage {
   readonly container: Locator;
@@ -14,7 +15,12 @@ export class ResetPage extends BasePage {
   }
 
   async navigate() {
-    await this.goto('/reset');
+    const loginPage = new LoginPage(this.page);
+    await loginPage.navigate();
+    await loginPage.forgotPasswordLink.click();
+    await expect(this.container).toBeVisible({ timeout: 2000 });
+    const pageUrl = this.page.url();
+    expect(pageUrl).toContain('/reset');
   }
 
   async resetPassword(email: string) {

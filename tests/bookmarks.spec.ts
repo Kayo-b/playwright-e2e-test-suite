@@ -12,11 +12,11 @@ test.describe('Bookmarks - Page Layout', () => {
     await expect(bookmarksPage.container).toBeVisible();
   });
 
-  test('should display bookmarks posts list', async ({ bookmarksPage }) => {
+  test('should display bookmarks posts list', async ({ bookmarksPage, page }) => {
     await expect(bookmarksPage.postsList).toBeVisible();
   });
 
-  test('should have correct test IDs', async ({ bookmarksPage }) => {
+  test('should have correct test IDs', async ({ bookmarksPage, page }) => {
     await expect(bookmarksPage.container).toHaveAttribute('data-testid', 'bookmarks-container');
     await expect(bookmarksPage.postsList).toHaveAttribute('data-testid', 'bookmarks-posts-list');
   });
@@ -80,27 +80,20 @@ test.describe('Bookmarks - Adding and Removing', () => {
   });
 
   test('should bookmark a post from homepage', async ({ page, bookmarksPage, homePage }) => {
-    // Wait for posts to load
     await homePage.wait(2000);
-    
     const bookmarkButton = page.getByTestId('bookmark-button-container').first();
     
     if (await bookmarkButton.isVisible()) {
-      // Get initial bookmark count
       await bookmarksPage.navigate();
       const initialCount = await bookmarksPage.getBookmarksCount();
       
-      // Go back to homepage and bookmark a post
-      await homePage.navigate();
-      await homePage.wait(1000);
+      await homePage.clickHomeBtn();
       await bookmarkButton.click();
-      
-      // Check bookmarks page
+      await page.waitForTimeout(1000);
+
       await bookmarksPage.navigate();
-      await bookmarksPage.wait(1000);
       const newCount = await bookmarksPage.getBookmarksCount();
       
-      // Count should have changed
       expect(newCount).toBeGreaterThanOrEqual(initialCount);
     }
   });
