@@ -99,26 +99,21 @@ test.describe('Bookmarks - Adding and Removing', () => {
   });
 
   test('should remove bookmark by clicking bookmark button again', async ({ page, bookmarksPage, homePage }) => {
-    // First ensure we have at least one bookmark
     await bookmarksPage.navigate();
     const count = await bookmarksPage.getBookmarksCount();
     
     if (count > 0) {
-      // Click on the bookmarked post to go to it
       await bookmarksPage.clickBookmark(0);
       await homePage.wait(1000);
       
-      // Find and click the bookmark button to remove bookmark
       const bookmarkButton = page.getByTestId('bookmark-button-container').first();
       if (await bookmarkButton.isVisible()) {
         await bookmarkButton.click();
         
-        // Navigate back to bookmarks
         await bookmarksPage.navigate();
         await bookmarksPage.wait(1000);
         
         const newCount = await bookmarksPage.getBookmarksCount();
-        // Count should have decreased or stayed same
         expect(newCount).toBeLessThanOrEqual(count);
       }
     }

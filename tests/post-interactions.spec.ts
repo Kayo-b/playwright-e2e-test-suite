@@ -6,7 +6,7 @@ test.describe('Post - Display and Structure', () => {
     await loginPage.navigate();
     await loginPage.loginAsGuest();
     await homePage.navigate();
-    await homePage.wait(2000); // Wait for posts to load
+    await homePage.wait(2000); 
   });
 
   test('should display post containers with correct test IDs', async ({ postPage, page }) => {
@@ -14,7 +14,6 @@ test.describe('Post - Display and Structure', () => {
     const postsCount = await posts.count();
     
     if (postsCount > 0) {
-      // Check first post has correct test ID
       await expect(posts.first()).toHaveAttribute('data-testid', 'post-container');
     }
   });
@@ -111,7 +110,6 @@ test.describe('Post - Action Buttons', () => {
       const likeButton = page.getByTestId('like-button').first();
       await likeButton.click();
       
-      // Button should still be visible after click
       await expect(likeButton).toBeVisible();
     }
   });
@@ -123,7 +121,6 @@ test.describe('Post - Action Buttons', () => {
       const bookmarkButton = page.getByTestId('bookmark-button-container').first();
       await bookmarkButton.click();
       
-      // Button should still be visible after click
       await expect(bookmarkButton).toBeVisible();
     }
   });
@@ -140,17 +137,13 @@ test.describe('Post - Creation', () => {
   test('should create a new post with text content', async ({ createPostPage, homePage }) => {
     const testPostContent = `Test post created at ${new Date().toISOString()}`;
     
-    // Fill textarea and submit
     await createPostPage.textarea.fill(testPostContent);
     await expect(createPostPage.textarea).toHaveValue(testPostContent);
     
-    // Click submit button
     await createPostPage.submitButton.click();
     
-    // Wait for post to be created
     await homePage.wait(2000);
     
-    // Textarea should be cleared after successful post
     await expect(createPostPage.textarea).toHaveValue('');
   });
 

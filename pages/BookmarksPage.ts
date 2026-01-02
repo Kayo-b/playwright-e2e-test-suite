@@ -31,7 +31,6 @@ export class BookmarksPage extends BasePage {
 
   async navigate() {
     await this.bookmarkStarIcon.click();
-    await this.container.waitFor({ state: 'visible', timeout: 5000 });
     const pageUrl = this.page.url();
     if (!pageUrl.includes('/bookmarks')) {
       throw new Error(`Expected to navigate to bookmarks page but got ${pageUrl}`);
