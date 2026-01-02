@@ -8,62 +8,61 @@ test.describe('Profile - View Profile Page', () => {
     await homePage.navigate();
   });
 
-  test('should display profile page container', async ({ profilePage, page }) => {
-    // Navigate to profile by clicking on user avatar or similar
+  test('should display profile page container', { tag: '@profile-view-001' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.container).toBeVisible();
   });
 
-  test('should display user container', async ({ profilePage, page }) => {
+  test('should display user container', { tag: '@profile-view-002' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.userContainer).toBeVisible();
   });
 
-  test('should display profile avatar', async ({ profilePage, page }) => {
+  test('should display profile avatar', { tag: '@profile-view-003' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.avatar).toBeVisible();
   });
 
-  test('should display profile info section', async ({ profilePage, page }) => {
+  test('should display profile info section', { tag: '@profile-view-004' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.infoSection).toBeVisible();
   });
 
-  test('should display username section', async ({ profilePage, page }) => {
+  test('should display username section', { tag: '@profile-view-005' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.usernameSection).toBeVisible();
   });
 
-  test('should display feed container', async ({ profilePage, page }) => {
+  test('should display feed container', { tag: '@profile-view-006' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.feedContainer).toBeVisible();
   });
 
-  test('should display feed tabs', async ({ profilePage, page }) => {
+  test('should display feed tabs', { tag: '@profile-view-007' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.feedTabs).toBeVisible();
   });
 
-  test('should display posts tab', async ({ profilePage, page }) => {
+  test('should display posts tab', { tag: '@profile-view-008' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.postsTab).toBeVisible();
   });
 
-  test('should display replies tab', async ({ profilePage, page }) => {
+  test('should display replies tab', { tag: '@profile-view-009' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.repliesTab).toBeVisible();
   });
 
-  test('should have correct test IDs', async ({ profilePage, page }) => {
+  test('should have correct test IDs', { tag: '@profile-view-010' }, async ({ profilePage, page }) => {
     await page.goto('/profile/guest-user');
     
     await expect(profilePage.container).toHaveAttribute('data-testid', 'profile-page-container');
@@ -86,39 +85,34 @@ test.describe('Profile - Feed Tabs', () => {
     await page.goto('/profile/guest-user');
   });
 
-  test('should click on posts tab', async ({ profilePage }) => {
+  test('should click on posts tab', { tag: '@profile-tabs-001' }, async ({ profilePage }) => {
     await profilePage.clickPostsTab();
     
-    // Posts tab should still be visible after click
     await expect(profilePage.postsTab).toBeVisible();
   });
 
-  test('should click on replies tab', async ({ profilePage }) => {
+  test('should click on replies tab', { tag: '@profile-tabs-002' }, async ({ profilePage }) => {
     await profilePage.clickRepliesTab();
     
-    // Replies tab should still be visible after click
     await expect(profilePage.repliesTab).toBeVisible();
   });
 
-  test('should switch between tabs', async ({ profilePage }) => {
-    // Click posts tab
+  test('should switch between tabs', { tag: '@profile-tabs-003' }, async ({ profilePage }) => {
     await profilePage.clickPostsTab();
     await expect(profilePage.postsTab).toBeVisible();
     
-    // Click replies tab
     await profilePage.clickRepliesTab();
     await expect(profilePage.repliesTab).toBeVisible();
     
-    // Click posts tab again
     await profilePage.clickPostsTab();
     await expect(profilePage.postsTab).toBeVisible();
   });
 
-  test('should display feed display container', async ({ profilePage }) => {
+  test('should display feed display container', { tag: '@profile-tabs-004' }, async ({ profilePage }) => {
     await expect(profilePage.feedDisplay).toBeVisible();
   });
 
-  test('should display posts container', async ({ profilePage }) => {
+  test('should display posts container', { tag: '@profile-tabs-005' }, async ({ profilePage }) => {
     await expect(profilePage.postsContainer).toBeVisible();
   });
 });
@@ -131,8 +125,7 @@ test.describe('Profile - Edit Profile Button', () => {
     await page.goto('/profile/guest-user');
   });
 
-  test('should display edit profile button on own profile', async ({ profilePage }) => {
-    // Check if edit button is visible (should be for own profile)
+  test('should display edit profile button on own profile', { tag: '@profile-edit-001' }, async ({ profilePage }) => {
     const isVisible = await profilePage.editProfileButton.isVisible();
     if (isVisible) {
       await expect(profilePage.editProfileButton).toBeVisible();
@@ -140,12 +133,11 @@ test.describe('Profile - Edit Profile Button', () => {
     }
   });
 
-  test('should click edit profile button', async ({ profilePage, editProfilePage }) => {
+  test('should click edit profile button', { tag: '@profile-edit-002' }, async ({ profilePage, editProfilePage }) => {
     const isVisible = await profilePage.editProfileButton.isVisible();
     if (isVisible) {
       await profilePage.clickEditProfile();
       
-      // Should show edit profile modal/page
       await expect(editProfilePage.container).toBeVisible();
     }
   });
@@ -158,9 +150,7 @@ test.describe('Profile - Follow Button', () => {
     await loginPage.loginAsGuest();
   });
 
-  test('should display follow button on other users profiles', async ({ profilePage, page }) => {
-    // Navigate to a different user's profile (not guest-user)
-    // This test assumes there are other users in the system
+  test('should display follow button on other users profiles', { tag: '@profile-follow-001' }, async ({ profilePage, page }) => {
     await page.goto('/profile/some-other-user');
     
     const followButton = page.getByTestId('profile-follow-button');
@@ -177,42 +167,41 @@ test.describe('Profile - Edit Profile Modal', () => {
     await loginPage.loginAsGuest();
     await page.goto('/profile/guest-user');
     
-    // Try to open edit profile if button is visible
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await profilePage.clickEditProfile();
     }
   });
 
-  test('should display edit profile container', async ({ editProfilePage, profilePage }) => {
+  test('should display edit profile container', { tag: '@profile-edit-003' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.container).toBeVisible();
     }
   });
 
-  test('should display name input field', async ({ editProfilePage, profilePage }) => {
+  test('should display name input field', { tag: '@profile-edit-004' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.nameInput).toBeVisible();
     }
   });
 
-  test('should display bio textarea', async ({ editProfilePage, profilePage }) => {
+  test('should display bio textarea', { tag: '@profile-edit-005' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.bioInput).toBeVisible();
     }
   });
 
-  test('should display save button', async ({ editProfilePage, profilePage }) => {
+  test('should display save button', { tag: '@profile-edit-006' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.saveButton).toBeVisible();
     }
   });
 
-  test('should display profile picture upload section', async ({ editProfilePage, profilePage }) => {
+  test('should display profile picture upload section', { tag: '@profile-edit-007' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.pictureUpload).toBeVisible();
@@ -220,7 +209,7 @@ test.describe('Profile - Edit Profile Modal', () => {
     }
   });
 
-  test('should display background image upload section', async ({ editProfilePage, profilePage }) => {
+  test('should display background image upload section', { tag: '@profile-edit-008' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.backgroundUpload).toBeVisible();
@@ -228,7 +217,7 @@ test.describe('Profile - Edit Profile Modal', () => {
     }
   });
 
-  test('should have correct test IDs', async ({ editProfilePage, profilePage }) => {
+  test('should have correct test IDs', { tag: '@profile-edit-009' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await expect(editProfilePage.container).toHaveAttribute('data-testid', 'edit-profile-container');
@@ -238,7 +227,7 @@ test.describe('Profile - Edit Profile Modal', () => {
     }
   });
 
-  test('should allow name input', async ({ editProfilePage, profilePage }) => {
+  test('should allow name input', { tag: '@profile-edit-010' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       const newName = 'Updated Name';
@@ -248,7 +237,7 @@ test.describe('Profile - Edit Profile Modal', () => {
     }
   });
 
-  test('should allow bio input', async ({ editProfilePage, profilePage }) => {
+  test('should allow bio input', { tag: '@profile-edit-011' }, async ({ editProfilePage, profilePage }) => {
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       const newBio = 'This is my updated bio!';
@@ -267,15 +256,15 @@ test.describe('Profile - Stats and Info', () => {
     await page.goto('/profile/guest-user');
   });
 
-  test('should display follow stats section', async ({ profilePage }) => {
+  test('should display follow stats section', { tag: '@profile-stats-001' }, async ({ profilePage }) => {
     await expect(profilePage.followStats).toBeVisible();
   });
 
-  test('should display bio container', async ({ profilePage }) => {
+  test('should display bio container', { tag: '@profile-stats-002' }, async ({ profilePage }) => {
     await expect(profilePage.bioContainer).toBeVisible();
   });
 
-  test('should have correct test IDs for stats', async ({ profilePage }) => {
+  test('should have correct test IDs for stats', { tag: '@profile-stats-003' }, async ({ profilePage }) => {
     await expect(profilePage.followStats).toHaveAttribute('data-testid', 'profile-follow-stats');
     await expect(profilePage.bioContainer).toHaveAttribute('data-testid', 'profile-bio-container');
   });

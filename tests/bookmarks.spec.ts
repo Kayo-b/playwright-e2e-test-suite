@@ -8,20 +8,20 @@ test.describe('Bookmarks - Page Layout', () => {
     await bookmarksPage.navigate();
   })
 
-  test('should display bookmar$s container', async ({ bookmarksPage, page }) => {
+  test('should display bookmar$s container', { tag: '@bookmarks-layout-001' }, async ({ bookmarksPage, page }) => {
     await expect(bookmarksPage.container).toBeVisible();
   });
 
-  test('should display bookmarks posts list', async ({ bookmarksPage, page }) => {
+  test('should display bookmarks posts list', { tag: '@bookmarks-layout-002' }, async ({ bookmarksPage, page }) => {
     await expect(bookmarksPage.postsList).toBeVisible();
   });
 
-  test('should have correct test IDs', async ({ bookmarksPage, page }) => {
+  test('should have correct test IDs', { tag: '@bookmarks-layout-003' }, async ({ bookmarksPage, page }) => {
     await expect(bookmarksPage.container).toHaveAttribute('data-testid', 'bookmarks-container');
     await expect(bookmarksPage.postsList).toHaveAttribute('data-testid', 'bookmarks-posts-list');
   });
 
-  test('should load bookmarks page correctly', async ({ bookmarksPage }) => {
+  test('should load bookmarks page correctly', { tag: '@bookmarks-layout-004' }, async ({ bookmarksPage }) => {
     const url = bookmarksPage.getUrl();
     expect(url).toContain('/bookmarks');
   });
@@ -35,12 +35,12 @@ test.describe('Bookmarks - Bookmarked Posts', () => {
     await bookmarksPage.navigate();
   });
 
-  test('should check bookmarks count', async ({ bookmarksPage }) => {
+  test('should check bookmarks count', { tag: '@bookmarks-posts-001' }, async ({ bookmarksPage }) => {
     const count = await bookmarksPage.getBookmarksCount();
     expect(count).toBeGreaterThanOrEqual(0);
   });
 
-  test('should display bookmark posts if any exist', async ({ bookmarksPage, page }) => {
+  test('should display bookmark posts if any exist', { tag: '@bookmarks-posts-002' }, async ({ bookmarksPage, page }) => {
     const count = await bookmarksPage.getBookmarksCount();
     
     if (count > 0) {
@@ -49,7 +49,7 @@ test.describe('Bookmarks - Bookmarked Posts', () => {
     }
   });
 
-  test('should have correct test IDs for bookmark posts', async ({ bookmarksPage, page }) => {
+  test('should have correct test IDs for bookmark posts', { tag: '@bookmarks-posts-003' }, async ({ bookmarksPage, page }) => {
     const count = await bookmarksPage.getBookmarksCount();
     
     if (count > 0) {
@@ -79,7 +79,7 @@ test.describe('Bookmarks - Adding and Removing', () => {
     await homePage.navigate();
   });
 
-  test('should bookmark a post from homepage', async ({ page, bookmarksPage, homePage }) => {
+  test('should bookmark a post from homepage', { tag: '@bookmarks-actions-001' }, async ({ page, bookmarksPage, homePage }) => {
     await homePage.wait(2000);
     const bookmarkButton = page.getByTestId('bookmark-button-container').first();
     
@@ -98,7 +98,7 @@ test.describe('Bookmarks - Adding and Removing', () => {
     }
   });
 
-  test('should remove bookmark by clicking bookmark button again', async ({ page, bookmarksPage, homePage }) => {
+  test('should remove bookmark by clicking bookmark button again', { tag: '@bookmarks-actions-002' }, async ({ page, bookmarksPage, homePage }) => {
     await bookmarksPage.navigate();
     const count = await bookmarksPage.getBookmarksCount();
     
@@ -122,7 +122,7 @@ test.describe('Bookmarks - Adding and Removing', () => {
 
 test.describe('Bookmarks - Empty State', () => {
   
-  test('should handle empty bookmarks gracefully', async ({ loginPage, bookmarksPage }) => {
+  test('should handle empty bookmarks gracefully', { tag: '@bookmarks-empty-001' }, async ({ loginPage, bookmarksPage }) => {
     await loginPage.navigate();
     await loginPage.loginAsGuest();
     await bookmarksPage.navigate();
@@ -130,7 +130,6 @@ test.describe('Bookmarks - Empty State', () => {
     const isEmpty = await bookmarksPage.isEmpty();
     
     if (isEmpty) {
-      // Container should still be visible even if empty
       await expect(bookmarksPage.container).toBeVisible();
       await expect(bookmarksPage.postsList).toBeVisible();
     }

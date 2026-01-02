@@ -9,7 +9,7 @@ test.describe('Post - Display and Structure', () => {
     await homePage.wait(2000); 
   });
 
-  test('should display post containers with correct test IDs', async ({ postPage, page }) => {
+  test('should display post containers with correct test IDs', { tag: '@post-display-001' }, async ({ postPage, page }) => {
     const posts = postPage.getAllPosts();
     const postsCount = await posts.count();
     
@@ -18,7 +18,7 @@ test.describe('Post - Display and Structure', () => {
     }
   });
 
-  test('should display post user information', async ({ postPage }) => {
+  test('should display post user information', { tag: '@post-display-002' }, async ({ postPage }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -33,7 +33,7 @@ test.describe('Post - Display and Structure', () => {
     }
   });
 
-  test('should display post content', async ({ postPage }) => {
+  test('should display post content', { tag: '@post-display-003' }, async ({ postPage }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -44,7 +44,7 @@ test.describe('Post - Display and Structure', () => {
     }
   });
 
-  test('should display post actions container', async ({ postPage }) => {
+  test('should display post actions container', { tag: '@post-display-004' }, async ({ postPage }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -67,7 +67,7 @@ test.describe('Post - Action Buttons', () => {
     await homePage.wait(2000);
   });
 
-  test('should display like button with correct test ID', async ({ postPage, page }) => {
+  test('should display like button with correct test ID', { tag: '@post-actions-001' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -76,7 +76,7 @@ test.describe('Post - Action Buttons', () => {
     }
   });
 
-  test('should display comment button with correct test ID', async ({ postPage, page }) => {
+  test('should display comment button with correct test ID', { tag: '@post-actions-002' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -85,7 +85,7 @@ test.describe('Post - Action Buttons', () => {
     }
   });
 
-  test('should display bookmark button with correct test ID', async ({ postPage, page }) => {
+  test('should display bookmark button with correct test ID', { tag: '@post-actions-003' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -94,7 +94,7 @@ test.describe('Post - Action Buttons', () => {
     }
   });
 
-  test('should display repost button with correct test ID', async ({ postPage, page }) => {
+  test('should display repost button with correct test ID', { tag: '@post-actions-004' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -103,7 +103,7 @@ test.describe('Post - Action Buttons', () => {
     }
   });
 
-  test('should allow clicking like button', async ({ postPage, page }) => {
+  test('should allow clicking like button', { tag: '@post-actions-005' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -114,7 +114,7 @@ test.describe('Post - Action Buttons', () => {
     }
   });
 
-  test('should allow clicking bookmark button', async ({ postPage, page }) => {
+  test('should allow clicking bookmark button', { tag: '@post-actions-006' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
     
     if (postsCount > 0) {
@@ -134,7 +134,7 @@ test.describe('Post - Creation', () => {
     await homePage.navigate();
   });
 
-  test('should create a new post with text content', async ({ createPostPage, homePage }) => {
+  test('should create a new post with text content', { tag: '@post-creation-001' }, async ({ createPostPage, homePage }) => {
     const testPostContent = `Test post created at ${new Date().toISOString()}`;
     
     await createPostPage.textarea.fill(testPostContent);
@@ -147,7 +147,7 @@ test.describe('Post - Creation', () => {
     await expect(createPostPage.textarea).toHaveValue('');
   });
 
-  test('should clear textarea after clearing', async ({ createPostPage }) => {
+  test('should clear textarea after clearing', { tag: '@post-creation-002' }, async ({ createPostPage }) => {
     const testContent = 'Test content';
     
     await createPostPage.textarea.fill(testContent);
@@ -157,7 +157,7 @@ test.describe('Post - Creation', () => {
     await expect(createPostPage.textarea).toHaveValue('');
   });
 
-  test('should have all create post test IDs', async ({ createPostPage }) => {
+  test('should have all create post test IDs', { tag: '@post-creation-003' }, async ({ createPostPage }) => {
     await expect(createPostPage.container).toHaveAttribute('data-testid', 'create-post-container');
     await expect(createPostPage.textarea).toHaveAttribute('data-testid', 'create-post-textarea');
     await expect(createPostPage.submitButton).toHaveAttribute('data-testid', 'create-post-submit-button');
@@ -174,7 +174,7 @@ test.describe('Post - Comment Functionality', () => {
     await homePage.wait(2000);
   });
 
-  test('should display comment button on posts', async ({ page }) => {
+  test('should display comment button on posts', { tag: '@post-comments-001' }, async ({ page }) => {
     const commentButton = page.getByTestId('comment-button').first();
     
     if (await commentButton.isVisible()) {
@@ -182,7 +182,7 @@ test.describe('Post - Comment Functionality', () => {
     }
   });
 
-  test('should have comment button container test ID', async ({ page }) => {
+  test('should have comment button container test ID', { tag: '@post-comments-002' }, async ({ page }) => {
     const commentButtonContainer = page.getByTestId('comment-button-container').first();
     
     if (await commentButtonContainer.isVisible()) {
