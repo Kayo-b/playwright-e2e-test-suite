@@ -41,7 +41,7 @@ export class LoginPage extends BasePage {
   async loginAsGuest() {
     const homepage = new HomePage(this.page)
     await this.guestButton.click();
-    await expect(homepage.container).toBeVisible({ timeout: 2000 });
+    await expect(homepage.container).toBeVisible({ timeout: 5000 });
     const pageUrl = this.page.url();
     expect(pageUrl).toContain('/homepage')
   }

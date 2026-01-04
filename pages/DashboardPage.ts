@@ -20,7 +20,7 @@ export class DashboardPage extends BasePage {
   }
 
   async getUsername(): Promise<string> {
-    return await this.username.textContent() || '';
+    return await this.username.textContent({timeout:5000}) || '';
   }
 
   async getEmail(): Promise<string> {
