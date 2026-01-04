@@ -29,8 +29,6 @@ export class CreatePostPage extends BasePage {
 
   async createPost(text: string) {
     await this.textarea.fill(text);
-    await this.submitButton.click();
-    await this.wait(1000);
   }
 
   async openGifSearch() {

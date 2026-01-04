@@ -135,7 +135,7 @@ test.describe('Post - Creation', () => {
   });
 
   test('should create a new post with text content', { tag: '@post-creation-001' }, async ({ createPostPage, homePage }) => {
-    const testPostContent = `Test post created at ${new Date().toISOString()}`;
+    const testPostContent = 'test1'// `Test post created at ${new Date().toISOString()}`;
     
     await createPostPage.textarea.fill(testPostContent);
     await expect(createPostPage.textarea).toHaveValue(testPostContent);
