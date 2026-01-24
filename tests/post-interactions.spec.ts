@@ -1,12 +1,10 @@
 import { test, expect } from '../fixtures/pages.fixture';
 
 test.describe('Post - Display and Structure', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
-    await homePage.wait(2000); 
+    await homePage.wait(2000);
   });
 
   test('should display post containers with correct test IDs', { tag: '@post-display-001' }, async ({ postPage, page }) => {
@@ -59,10 +57,8 @@ test.describe('Post - Display and Structure', () => {
 });
 
 test.describe('Post - Action Buttons', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
     await homePage.wait(2000);
   });
@@ -127,10 +123,8 @@ test.describe('Post - Action Buttons', () => {
 });
 
 test.describe('Post - Creation', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -166,10 +160,8 @@ test.describe('Post - Creation', () => {
 });
 
 test.describe('Post - Comment Functionality', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
     await homePage.wait(2000);
   });

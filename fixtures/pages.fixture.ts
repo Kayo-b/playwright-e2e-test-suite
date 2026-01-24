@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test';
+import { test as base, BrowserContext } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { ResetPage } from '../pages/ResetPage';
@@ -29,7 +29,38 @@ type PageFixtures = {
   gifSearchPage: GifSearchPage;
 };
 
-export const test = base.extend<PageFixtures>({
+type WorkerFixtures = {
+  workerAuthContext: BrowserContext;
+};
+
+export const test = base.extend<PageFixtures, WorkerFixtures>({
+  // worker-scoped fixture that creates an authenticated context once per worker
+  workerAuthContext: [async ({ browser }, use) => {
+    const context = await browser.newContext();
+    const setupPage = await context.newPage();
+
+    await setupPage.goto('/');
+    const guestButton = setupPage.getByTestId('login-guest-button');
+    await guestButton.waitFor({ state: 'visible', timeout: 30000 });
+    await guestButton.click();
+
+    const homepageContainer = setupPage.getByTestId('homepage-container');
+    await homepageContainer.waitFor({ state: 'visible', timeout: 30000 });
+
+    await setupPage.close();
+
+    await use(context);
+
+    await context.close();
+  }, { scope: 'worker' }],
+
+  // override page to use the authenticated context
+  page: async ({ workerAuthContext }, use) => {
+    const page = await workerAuthContext.newPage();
+    await use(page);
+    await page.close();
+  },
+
   loginPage: async ({ page }, use) => {
     const loginPage = new LoginPage(page);
     await use(loginPage);

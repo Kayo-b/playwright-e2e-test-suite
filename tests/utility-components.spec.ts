@@ -1,10 +1,8 @@
 import { test, expect } from '../fixtures/pages.fixture';
 
 test.describe('GIF Search - Modal Display', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -62,10 +60,8 @@ test.describe('GIF Search - Modal Display', () => {
 });
 
 test.describe('GIF Search - Search Functionality', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage, createPostPage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage, createPostPage }) => {
     await homePage.navigate();
     await createPostPage.gifButton.click();
     await createPostPage.wait(500);
@@ -109,10 +105,8 @@ test.describe('GIF Search - Search Functionality', () => {
 });
 
 test.describe('Post Page - Detail View', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -147,10 +141,8 @@ test.describe('Post Page - Detail View', () => {
 });
 
 test.describe('Feed Component', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -166,10 +158,8 @@ test.describe('Feed Component', () => {
 });
 
 test.describe('Comment Modal', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
     await homePage.wait(2000);
   });

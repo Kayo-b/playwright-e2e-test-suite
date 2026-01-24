@@ -30,11 +30,7 @@ export class BookmarksPage extends BasePage {
   }
 
   async navigate() {
-    await this.bookmarkStarIcon.click();
-    const pageUrl = this.page.url();
-    if (!pageUrl.includes('/bookmarks')) {
-      throw new Error(`Expected to navigate to bookmarks page but got ${pageUrl}`);
-    }
+    await this.goto('/bookmarks');
   }
   
   async clickBookmarkBtn() {

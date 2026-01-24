@@ -2,9 +2,7 @@ import { test, expect } from '../fixtures/pages.fixture';
 
 test.describe('Bookmarks - Page Layout', () => {
 
-  test.beforeEach(async ({ loginPage, bookmarksPage, page }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+  test.beforeEach(async ({ bookmarksPage }) => {
     await bookmarksPage.navigate();
   })
 
@@ -28,10 +26,8 @@ test.describe('Bookmarks - Page Layout', () => {
 });
 
 test.describe('Bookmarks - Bookmarked Posts', () => {
-  
-  test.beforeEach(async ({ loginPage, bookmarksPage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ bookmarksPage }) => {
     await bookmarksPage.navigate();
   });
 
@@ -72,10 +68,8 @@ test.describe('Bookmarks - Bookmarked Posts', () => {
 });
 
 test.describe('Bookmarks - Adding and Removing', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -121,14 +115,12 @@ test.describe('Bookmarks - Adding and Removing', () => {
 });
 
 test.describe('Bookmarks - Empty State', () => {
-  
-  test('should handle empty bookmarks gracefully', { tag: '@bookmarks-empty-001' }, async ({ loginPage, bookmarksPage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test('should handle empty bookmarks gracefully', { tag: '@bookmarks-empty-001' }, async ({ bookmarksPage }) => {
     await bookmarksPage.navigate();
-    
+
     const isEmpty = await bookmarksPage.isEmpty();
-    
+
     if (isEmpty) {
       await expect(bookmarksPage.container).toBeVisible();
       await expect(bookmarksPage.postsList).toBeVisible();

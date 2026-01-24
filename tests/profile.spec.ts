@@ -1,11 +1,9 @@
 import { test, expect } from '../fixtures/pages.fixture';
 
 test.describe('Profile - View Profile Page', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
-    await homePage.navigate();
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/homepage');
   });
 
   test('should display profile page container', { tag: '@profile-view-001' }, async ({ profilePage, page }) => {
@@ -78,10 +76,8 @@ test.describe('Profile - View Profile Page', () => {
 });
 
 test.describe('Profile - Feed Tabs', () => {
-  
-  test.beforeEach(async ({ loginPage, page }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ page }) => {
     await page.goto('/profile/guest-user');
   });
 
@@ -118,10 +114,8 @@ test.describe('Profile - Feed Tabs', () => {
 });
 
 test.describe('Profile - Edit Profile Button', () => {
-  
-  test.beforeEach(async ({ loginPage, page }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ page }) => {
     await page.goto('/profile/guest-user');
   });
 
@@ -144,10 +138,9 @@ test.describe('Profile - Edit Profile Button', () => {
 });
 
 test.describe('Profile - Follow Button', () => {
-  
-  test.beforeEach(async ({ loginPage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/homepage');
   });
 
   test('should display follow button on other users profiles', { tag: '@profile-follow-001' }, async ({ profilePage, page }) => {
@@ -161,12 +154,10 @@ test.describe('Profile - Follow Button', () => {
 });
 
 test.describe('Profile - Edit Profile Modal', () => {
-  
-  test.beforeEach(async ({ loginPage, page, profilePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ page, profilePage }) => {
     await page.goto('/profile/guest-user');
-    
+
     const editButtonVisible = await profilePage.editProfileButton.isVisible();
     if (editButtonVisible) {
       await profilePage.clickEditProfile();
@@ -249,10 +240,8 @@ test.describe('Profile - Edit Profile Modal', () => {
 });
 
 test.describe('Profile - Stats and Info', () => {
-  
-  test.beforeEach(async ({ loginPage, page }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ page }) => {
     await page.goto('/profile/guest-user');
   });
 

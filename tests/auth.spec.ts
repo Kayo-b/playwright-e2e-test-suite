@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures/pages.fixture';
+import { test, expect } from '../fixtures/auth.fixture';
 
 test.describe('Authentication - Login', () => {
   

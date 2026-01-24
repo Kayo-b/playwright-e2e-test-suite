@@ -1,10 +1,8 @@
 import { test, expect } from '../fixtures/pages.fixture';
 
 test.describe('Navigation - Sidebar', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -50,10 +48,8 @@ test.describe('Navigation - Sidebar', () => {
 });
 
 test.describe('Navigation - Dashboard', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -104,10 +100,8 @@ test.describe('Navigation - Dashboard', () => {
 });
 
 test.describe('Navigation - Searchbar', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -145,10 +139,8 @@ test.describe('Navigation - Searchbar', () => {
 });
 
 test.describe('Navigation - Navbar', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -172,10 +164,9 @@ test.describe('Navigation - Navbar', () => {
 });
 
 test.describe('Navigation - Page Transitions', () => {
-  
-  test.beforeEach(async ({ loginPage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/homepage');
   });
 
   test('should navigate between homepage and bookmarks', { tag: '@nav-transitions-001' }, async ({ sidebarPage, homePage, bookmarksPage }) => {

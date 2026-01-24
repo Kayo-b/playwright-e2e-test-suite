@@ -1,10 +1,8 @@
 import { test, expect } from '../fixtures/pages.fixture';
 
 test.describe('Homepage - Layout and Structure', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -17,7 +15,7 @@ test.describe('Homepage - Layout and Structure', () => {
   });
 
   test('should display feed section', { tag: '@homepage-layout-003' }, async ({ homePage }) => {
-    await expect(homePage.feedSection).toBeVisible();
+    await expect(homePage.feedSection).toBeVisible({ timeout: 5000 });
   });
 
   test('should verify homepage is loaded correctly', { tag: '@homepage-layout-004' }, async ({ homePage }) => {
@@ -31,17 +29,15 @@ test.describe('Homepage - Layout and Structure', () => {
   });
 
   test('should have correct test IDs', { tag: '@homepage-layout-006' }, async ({ homePage }) => {
-    await expect(homePage.container).toHaveAttribute('data-testid', 'homepage-container');
+    await expect(homePage.container).toHaveAttribute('data-testid', 'homepage-container', { timeout: 2000 });
     await expect(homePage.createPostSection).toHaveAttribute('data-testid', 'homepage-create-post');
     await expect(homePage.feedSection).toHaveAttribute('data-testid', 'homepage-feed');
   });
 });
 
 test.describe('Homepage - Create Post', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 
@@ -77,10 +73,8 @@ test.describe('Homepage - Create Post', () => {
 });
 
 test.describe('Homepage - Feed Display', () => {
-  
-  test.beforeEach(async ({ loginPage, homePage }) => {
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+
+  test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
   });
 

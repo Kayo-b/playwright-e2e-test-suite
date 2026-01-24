@@ -22,9 +22,7 @@ export class HomePage extends BasePage {
   }
 
   async navigate() {
-    const loginPage = new (require('./LoginPage').LoginPage)(this.page);
-    await loginPage.navigate();
-    await loginPage.loginAsGuest();
+    await this.goto('/homepage');
   }
 
   async clickHomeBtn() {
