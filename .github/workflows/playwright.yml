@@ -229,10 +229,7 @@ jobs:
           HEAL_PROMPT
 
           # Run Claude Code in headless mode with the healing prompt
-          claude-code --headless \
-            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(npx playwright*),mcp__playwright-test__*" \
-            --max-turns 25 \
-            "$(cat /tmp/heal-prompt.txt)" 2>&1 | tee /tmp/claude-output.txt
+          claude --dangerously-skip-permissions -p "$(cat /tmp/heal-prompt.txt)" 2>&1 | tee /tmp/claude-output.txt
 
           # Check if any files were modified
           if git diff --quiet; then
