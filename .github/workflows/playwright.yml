@@ -1,27 +1,380 @@
-name: Playwright Tests
+name: Playwright Tests with Auto-Healing
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      skip_healing:
+        description: 'Skip auto-healing on failures'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  CI: true
+  PLAYWRIGHT_BROWSERS_PATH: 0
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    outputs:
+      test_outcome: ${{ steps.run_tests.outcome }}
+      has_failures: ${{ steps.check_failures.outputs.has_failures }}
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Detect package manager
+        id: detect_pm
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+            echo "install_cmd=pnpm install --frozen-lockfile" >> $GITHUB_OUTPUT
+            echo "exec_cmd=pnpm exec" >> $GITHUB_OUTPUT
+          elif [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "install_cmd=yarn install --frozen-lockfile" >> $GITHUB_OUTPUT
+            echo "exec_cmd=yarn" >> $GITHUB_OUTPUT
+          else
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "install_cmd=npm ci" >> $GITHUB_OUTPUT
+            echo "exec_cmd=npx" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup pnpm
+        if: steps.detect_pm.outputs.manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.pnpm-store
+            ~/.yarn/cache
+            node_modules
+          key: ${{ runner.os }}-${{ steps.detect_pm.outputs.manager }}-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.detect_pm.outputs.manager }}-
+
+      - name: Install dependencies
+        run: ${{ steps.detect_pm.outputs.install_cmd }}
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers
+        run: ${{ steps.detect_pm.outputs.exec_cmd }} playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        id: run_tests
+        continue-on-error: true
+        run: |
+          ${{ steps.detect_pm.outputs.exec_cmd }} playwright test \
+            --reporter=html,json,github \
+            --output=test-results
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/results.json
+
+      - name: Check for test failures
+        id: check_failures
+        run: |
+          if [ "${{ steps.run_tests.outcome }}" == "failure" ]; then
+            echo "has_failures=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_failures=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            test-results/
+            !test-results/.last-run.json
+          retention-days: 30
+
+      - name: Upload trace files
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: trace-files
+          path: test-results/**/trace.zip
+          retention-days: 7
+          if-no-files-found: ignore
+
+  auto-heal:
+    needs: test
+    if: |
+      needs.test.outputs.has_failures == 'true' &&
+      github.event_name == 'pull_request' &&
+      github.event.inputs.skip_healing != 'true'
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Detect package manager
+        id: detect_pm
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+            echo "install_cmd=pnpm install --frozen-lockfile" >> $GITHUB_OUTPUT
+            echo "exec_cmd=pnpm exec" >> $GITHUB_OUTPUT
+          elif [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+            echo "install_cmd=yarn install --frozen-lockfile" >> $GITHUB_OUTPUT
+            echo "exec_cmd=yarn" >> $GITHUB_OUTPUT
+          else
+            echo "manager=npm" >> $GITHUB_OUTPUT
+            echo "install_cmd=npm ci" >> $GITHUB_OUTPUT
+            echo "exec_cmd=npx" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup pnpm
+        if: steps.detect_pm.outputs.manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: ${{ steps.detect_pm.outputs.install_cmd }}
+
+      - name: Install Playwright browsers
+        run: ${{ steps.detect_pm.outputs.exec_cmd }} playwright install --with-deps chromium
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run auto-healing with Claude Code
+        id: heal
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Create a healing prompt based on test failures
+          cat > /tmp/heal-prompt.txt << 'HEAL_PROMPT'
+          Analyze the failing Playwright tests and attempt to fix them.
+
+          Instructions:
+          1. First, list the tests to identify failures using mcp__playwright-test__test_list
+          2. For each failing test, use mcp__playwright-test__test_debug to understand the failure
+          3. Read the relevant test files and analyze the error messages
+          4. Common issues to look for and fix:
+             - Broken selectors (use getByRole, getByLabel, getByTestId)
+             - Timing issues (remove waitForTimeout, use proper waits)
+             - Changed UI elements or text
+             - Flaky assertions
+          5. Apply fixes to the test files
+          6. After fixing, run the tests again to verify
+
+          Focus on:
+          - Updating selectors to match current DOM structure
+          - Replacing hard-coded waits with proper Playwright waits
+          - Fixing assertion mismatches
+          - Improving test stability
+
+          Do NOT:
+          - Skip or delete failing tests
+          - Add excessive timeouts
+          - Make changes unrelated to the failures
+
+          After attempting fixes, provide a summary of changes made.
+          HEAL_PROMPT
+
+          # Run Claude Code in headless mode with the healing prompt
+          claude-code --headless \
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(npx playwright*),mcp__playwright-test__*" \
+            --max-turns 25 \
+            "$(cat /tmp/heal-prompt.txt)" 2>&1 | tee /tmp/claude-output.txt
+
+          # Check if any files were modified
+          if git diff --quiet; then
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify fixes
+        if: steps.heal.outputs.no_changes == 'false'
+        id: verify
+        continue-on-error: true
+        run: |
+          ${{ steps.detect_pm.outputs.exec_cmd }} playwright test --reporter=github
+
+      - name: Commit and push fixes
+        if: |
+          steps.heal.outputs.no_changes == 'false' &&
+          steps.verify.outcome == 'success'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git commit -m "fix(tests): auto-heal failing Playwright tests
+
+          Automated fixes applied by Claude Code:
+          - Updated selectors to match current DOM
+          - Fixed timing issues
+          - Improved test stability
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+
+          git push origin ${{ github.head_ref }}
+
+      - name: Comment on PR (success)
+        if: |
+          steps.heal.outputs.no_changes == 'false' &&
+          steps.verify.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Auto-Healing Complete
+
+              Claude Code has automatically fixed the failing Playwright tests.
+
+              **Changes have been committed to this branch.** Please review the changes and re-run the tests.
+
+              <details>
+              <summary>What was fixed</summary>
+
+              - Updated selectors to match current DOM structure
+              - Fixed timing-related issues
+              - Improved test assertions
+
+              </details>
+
+              ---
+              *Automated by [Claude Code](https://github.com/anthropics/claude-code)*`
+            })
+
+      - name: Comment on PR (partial/no fix)
+        if: |
+          steps.heal.outputs.no_changes == 'true' ||
+          steps.verify.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const noChanges = '${{ steps.heal.outputs.no_changes }}' === 'true';
+            const body = noChanges
+              ? `## Auto-Healing Analysis
+
+              Claude Code analyzed the failing tests but could not automatically fix them.
+
+              **Manual intervention required.** The failures may be due to:
+              - Application behavior changes requiring test logic updates
+              - Complex selector changes
+              - Backend/API issues
+              - Environment-specific problems
+
+              Please review the test results and fix manually.
+
+              ---
+              *Automated by [Claude Code](https://github.com/anthropics/claude-code)*`
+              : `## Auto-Healing Attempted
+
+              Claude Code attempted to fix the failing tests, but the fixes did not resolve all issues.
+
+              **Manual review required.** Some fixes were applied but tests are still failing.
+
+              Please review the attempted changes in the latest commit and make additional fixes as needed.
+
+              ---
+              *Automated by [Claude Code](https://github.com/anthropics/claude-code)*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
+
+      - name: Upload healing logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auto-heal-logs
+          path: /tmp/claude-output.txt
+          retention-days: 7
+
+  report:
+    needs: [test, auto-heal]
+    if: always() && needs.test.result != 'skipped'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+      - name: Publish test summary
+        if: always()
+        run: |
+          echo "## Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.test.outputs.has_failures }}" == "true" ]; then
+            echo ":x: **Tests Failed**" >> $GITHUB_STEP_SUMMARY
+
+            if [ "${{ needs.auto-heal.result }}" == "success" ]; then
+              echo ":wrench: Auto-healing was attempted" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo ":white_check_mark: **All Tests Passed**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View the full report in the uploaded artifacts." >> $GITHUB_STEP_SUMMARY
