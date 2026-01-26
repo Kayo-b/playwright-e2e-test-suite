@@ -20,7 +20,14 @@ export class GifSearchPage extends BasePage {
   async searchGif(query: string) {
     await this.input.fill(query);
     await this.submitButton.click();
-    await this.wait(1000);
+  }
+
+  async waitForResults(timeout: number = 10000) {
+    // First wait for the results container to be attached
+    await this.results.waitFor({ state: 'attached', timeout });
+    // Then wait for actual GIF images to be attached (they may be hidden by CSS)
+    const gifs = this.results.locator('img');
+    await gifs.first().waitFor({ state: 'attached', timeout });
   }
 
   async getResultsCount(): Promise<number> {

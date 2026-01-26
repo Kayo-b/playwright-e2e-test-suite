@@ -83,8 +83,8 @@ test.describe('Homepage - Feed Display', () => {
   });
 
   test('should check if posts are present', { tag: '@homepage-feed-002' }, async ({ postPage, homePage }) => {
-    await homePage.wait(2000);
-    
+    await homePage.waitForPostsToLoad();
+
     const postsCount = await postPage.getAllPosts().count();
     expect(postsCount).toBeGreaterThanOrEqual(0);
   });

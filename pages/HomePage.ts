@@ -35,7 +35,7 @@ export class HomePage extends BasePage {
   async createPost(content: string) {
     await this.postTextArea.fill(content);
     await this.postButton.click();
-    await this.wait(1000);
+    await this.postTextArea.waitFor({ state: 'visible' });
   }
 
   async getPosts() {
@@ -60,5 +60,9 @@ export class HomePage extends BasePage {
 
   async isHomePageLoaded(): Promise<boolean> {
     return this.getUrl().includes('/homepage');
+  }
+
+  async waitForPostsToLoad() {
+    await this.feedSection.waitFor({ state: 'visible' });
   }
 }

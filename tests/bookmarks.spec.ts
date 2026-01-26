@@ -74,7 +74,7 @@ test.describe('Bookmarks - Adding and Removing', () => {
   });
 
   test('should bookmark a post from homepage', { tag: '@bookmarks-actions-001' }, async ({ page, bookmarksPage, homePage }) => {
-    await homePage.wait(2000);
+    await homePage.waitForPostsToLoad();
     const bookmarkButton = page.getByTestId('bookmark-button-container').first();
     
     if (await bookmarkButton.isVisible()) {
@@ -83,10 +83,10 @@ test.describe('Bookmarks - Adding and Removing', () => {
       
       await homePage.clickHomeBtn();
       await bookmarkButton.click();
-      await page.waitForTimeout(1000);
-
+      // await page.waitForTimeout(1000);
+      
       await bookmarksPage.navigate();
-      const newCount = await bookmarksPage.getBookmarksCount();
+      const newCount = await bookmarksPage.getBookmarksCount()
       
       expect(newCount).toBeGreaterThanOrEqual(initialCount);
     }
@@ -98,15 +98,15 @@ test.describe('Bookmarks - Adding and Removing', () => {
     
     if (count > 0) {
       await bookmarksPage.clickBookmark(0);
-      await homePage.wait(1000);
-      
+      await homePage.feedSection.waitFor({ state: 'visible' });
+
       const bookmarkButton = page.getByTestId('bookmark-button-container').first();
       if (await bookmarkButton.isVisible()) {
         await bookmarkButton.click();
-        
+
         await bookmarksPage.navigate();
-        await bookmarksPage.wait(1000);
-        
+        await bookmarksPage.postsList.waitFor({ state: 'visible' });
+
         const newCount = await bookmarksPage.getBookmarksCount();
         expect(newCount).toBeLessThanOrEqual(count);
       }

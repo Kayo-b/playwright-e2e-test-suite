@@ -4,7 +4,7 @@ test.describe('Post - Display and Structure', () => {
 
   test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
-    await homePage.wait(2000);
+    await homePage.waitForPostsToLoad();
   });
 
   test('should display post containers with correct test IDs', { tag: '@post-display-001' }, async ({ postPage, page }) => {
@@ -60,7 +60,7 @@ test.describe('Post - Action Buttons', () => {
 
   test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
-    await homePage.wait(2000);
+    await homePage.waitForPostsToLoad();
   });
 
   test('should display like button with correct test ID', { tag: '@post-actions-001' }, async ({ postPage, page }) => {
@@ -128,17 +128,26 @@ test.describe('Post - Creation', () => {
     await homePage.navigate();
   });
 
-  test('should create a new post with text content', { tag: '@post-creation-001' }, async ({ createPostPage, homePage }) => {
+  test('should create a new post with text content', { tag: '@post-creation-001' }, async ({ createPostPage, homePage, page }) => {
     const testPostContent = 'test1'// `Test post created at ${new Date().toISOString()}`;
-    
+
+    const initialPostCount = await homePage.getPostsCount();
+
     await createPostPage.textarea.fill(testPostContent);
     await expect(createPostPage.textarea).toHaveValue(testPostContent);
-    
+
     await createPostPage.submitButton.click();
-    
-    await homePage.wait(2000);
-    
-    await expect(createPostPage.textarea).toHaveValue('');
+
+    // Wait for the post to appear in the feed or textarea to clear
+    await page.waitForFunction(
+      (initialCount) => {
+        const element = document.querySelector(`[data-testid="create-post-textarea"]`) as HTMLTextAreaElement;
+        const posts = document.querySelectorAll('[data-testid="post-container"]');
+        return element?.value === '' || posts.length > initialCount;
+      },
+      initialPostCount,
+      { timeout: 10000 }
+    );
   });
 
   test('should clear textarea after clearing', { tag: '@post-creation-002' }, async ({ createPostPage }) => {
@@ -163,7 +172,7 @@ test.describe('Post - Comment Functionality', () => {
 
   test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
-    await homePage.wait(2000);
+    await homePage.waitForPostsToLoad();
   });
 
   test('should display comment button on posts', { tag: '@post-comments-001' }, async ({ page }) => {

@@ -31,8 +31,12 @@ export class BasePage {
     await this.page.screenshot({ path: `screenshots/${name}.png`, fullPage: true });
   }
 
-  async wait(milliseconds: number) {
-    await this.page.waitForTimeout(milliseconds);
+  async waitForDOMReady() {
+    await this.page.waitForLoadState('domcontentloaded');
+  }
+
+  async waitForPageReady() {
+    await this.page.waitForLoadState('load');
   }
 }
 

@@ -61,7 +61,6 @@ export class ProfilePage extends BasePage {
 
   async clickFollowButton() {
     await this.followButton.click();
-    await this.wait(500);
   }
 
   async getPostsCount(): Promise<number> {
