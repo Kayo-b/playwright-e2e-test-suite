@@ -8,7 +8,7 @@ export class HomePage extends BasePage {
   readonly postTextArea: Locator;
   readonly postButton: Locator;
   readonly posts: Locator;
-  readonly homeSbBtn
+  readonly homeSbBtn: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,9 +26,6 @@ export class HomePage extends BasePage {
   }
 
   async clickHomeBtn() {
-    await this.page.evaluate(() => {
-      console.log('click home btn')
-    })
     await this.homeSbBtn.click();
   }
 

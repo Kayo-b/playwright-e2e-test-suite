@@ -1,124 +1,83 @@
 import { test, expect } from '../fixtures/pages.fixture';
 
-test.describe('Post - Display and Structure', () => {
+test.describe('Post - Display', () => {
 
   test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
     await homePage.waitForPostsToLoad();
   });
 
-  test('should display post containers with correct test IDs', { tag: '@post-display-001' }, async ({ postPage, page }) => {
-    const posts = postPage.getAllPosts();
-    const postsCount = await posts.count();
-    
-    if (postsCount > 0) {
-      await expect(posts.first()).toHaveAttribute('data-testid', 'post-container');
+  test('should display posts with user information and content', { tag: '@post-display-001' }, async ({ postPage }) => {
+    const postsCount = await postPage.getAllPosts().count();
+    if (postsCount === 0) {
+      test.skip();
+      return;
     }
+
+    const firstPost = postPage.getPostByIndex(0);
+    const userContainer = firstPost.getByTestId('post-user-container');
+    const userAvatar = firstPost.getByTestId('post-user-avatar');
+    const username = firstPost.getByTestId('post-username');
+    const content = firstPost.getByTestId('post-content');
+
+    await expect(userContainer).toBeVisible();
+    await expect(userAvatar).toBeVisible();
+    await expect(username).toBeVisible();
+    await expect(content).toBeVisible();
   });
 
-  test('should display post user information', { tag: '@post-display-002' }, async ({ postPage }) => {
+  test('should display post action buttons', { tag: '@post-display-002' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const firstPost = postPage.getPostByIndex(0);
-      const userContainer = firstPost.getByTestId('post-user-container');
-      const userAvatar = firstPost.getByTestId('post-user-avatar');
-      const username = firstPost.getByTestId('post-username');
-      
-      await expect(userContainer).toBeVisible();
-      await expect(userAvatar).toBeVisible();
-      await expect(username).toBeVisible();
+    if (postsCount === 0) {
+      test.skip();
+      return;
     }
-  });
 
-  test('should display post content', { tag: '@post-display-003' }, async ({ postPage }) => {
-    const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const firstPost = postPage.getPostByIndex(0);
-      const content = firstPost.getByTestId('post-content');
-      
-      await expect(content).toBeVisible();
-    }
-  });
+    const firstPost = postPage.getPostByIndex(0);
+    const actionsContainer = firstPost.getByTestId('post-actions-container');
+    const actions = firstPost.getByTestId('post-actions');
 
-  test('should display post actions container', { tag: '@post-display-004' }, async ({ postPage }) => {
-    const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const firstPost = postPage.getPostByIndex(0);
-      const actionsContainer = firstPost.getByTestId('post-actions-container');
-      const actions = firstPost.getByTestId('post-actions');
-      
-      await expect(actionsContainer).toBeVisible();
-      await expect(actions).toBeVisible();
-    }
+    await expect(actionsContainer).toBeVisible();
+    await expect(actions).toBeVisible();
+
+    await expect(page.getByTestId('like-button').first()).toBeVisible();
+    await expect(page.getByTestId('comment-button').first()).toBeVisible();
+    await expect(page.getByTestId('bookmark-button-container').first()).toBeVisible();
+    await expect(page.getByTestId('repost-button-container').first()).toBeVisible();
   });
 });
 
-test.describe('Post - Action Buttons', () => {
+test.describe('Post - Actions', () => {
 
   test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
     await homePage.waitForPostsToLoad();
   });
 
-  test('should display like button with correct test ID', { tag: '@post-actions-001' }, async ({ postPage, page }) => {
+  test('should allow clicking like button', { tag: '@post-actions-001' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const likeButton = page.getByTestId('like-button').first();
-      await expect(likeButton).toBeVisible();
+    if (postsCount === 0) {
+      test.skip();
+      return;
     }
+
+    const likeButton = page.getByTestId('like-button').first();
+    await likeButton.click();
+
+    await expect(likeButton).toBeVisible();
   });
 
-  test('should display comment button with correct test ID', { tag: '@post-actions-002' }, async ({ postPage, page }) => {
+  test('should allow clicking bookmark button', { tag: '@post-actions-002' }, async ({ postPage, page }) => {
     const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const commentButton = page.getByTestId('comment-button').first();
-      await expect(commentButton).toBeVisible();
+    if (postsCount === 0) {
+      test.skip();
+      return;
     }
-  });
 
-  test('should display bookmark button with correct test ID', { tag: '@post-actions-003' }, async ({ postPage, page }) => {
-    const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const bookmarkButton = page.getByTestId('bookmark-button-container').first();
-      await expect(bookmarkButton).toBeVisible();
-    }
-  });
+    const bookmarkButton = page.getByTestId('bookmark-button-container').first();
+    await bookmarkButton.click();
 
-  test('should display repost button with correct test ID', { tag: '@post-actions-004' }, async ({ postPage, page }) => {
-    const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const repostButton = page.getByTestId('repost-button-container').first();
-      await expect(repostButton).toBeVisible();
-    }
-  });
-
-  test('should allow clicking like button', { tag: '@post-actions-005' }, async ({ postPage, page }) => {
-    const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const likeButton = page.getByTestId('like-button').first();
-      await likeButton.click();
-      
-      await expect(likeButton).toBeVisible();
-    }
-  });
-
-  test('should allow clicking bookmark button', { tag: '@post-actions-006' }, async ({ postPage, page }) => {
-    const postsCount = await postPage.getAllPosts().count();
-    
-    if (postsCount > 0) {
-      const bookmarkButton = page.getByTestId('bookmark-button-container').first();
-      await bookmarkButton.click();
-      
-      await expect(bookmarkButton).toBeVisible();
-    }
+    await expect(bookmarkButton).toBeVisible();
   });
 });
 
@@ -129,8 +88,7 @@ test.describe('Post - Creation', () => {
   });
 
   test('should create a new post with text content', { tag: '@post-creation-001' }, async ({ createPostPage, homePage, page }) => {
-    const testPostContent = 'test1'// `Test post created at ${new Date().toISOString()}`;
-
+    const testPostContent = `test-${Date.now()}`;
     const initialPostCount = await homePage.getPostsCount();
 
     await createPostPage.textarea.fill(testPostContent);
@@ -138,56 +96,40 @@ test.describe('Post - Creation', () => {
 
     await createPostPage.submitButton.click();
 
-    // Wait for the post to appear in the feed or textarea to clear
-    await page.waitForFunction(
-      (initialCount) => {
-        const element = document.querySelector(`[data-testid="create-post-textarea"]`) as HTMLTextAreaElement;
-        const posts = document.querySelectorAll('[data-testid="post-container"]');
-        return element?.value === '' || posts.length > initialCount;
-      },
-      initialPostCount,
-      { timeout: 10000 }
-    );
+    await expect(async () => {
+      const newCount = await homePage.getPostsCount();
+      expect(newCount).toBeGreaterThan(initialPostCount);
+    }).toPass({ timeout: 10000 });
   });
 
   test('should clear textarea after clearing', { tag: '@post-creation-002' }, async ({ createPostPage }) => {
     const testContent = 'Test content';
-    
+
     await createPostPage.textarea.fill(testContent);
     await expect(createPostPage.textarea).toHaveValue(testContent);
-    
+
     await createPostPage.clearText();
     await expect(createPostPage.textarea).toHaveValue('');
   });
-
-  test('should have all create post test IDs', { tag: '@post-creation-003' }, async ({ createPostPage }) => {
-    await expect(createPostPage.container).toHaveAttribute('data-testid', 'create-post-container');
-    await expect(createPostPage.textarea).toHaveAttribute('data-testid', 'create-post-textarea');
-    await expect(createPostPage.submitButton).toHaveAttribute('data-testid', 'create-post-submit-button');
-    await expect(createPostPage.actions).toHaveAttribute('data-testid', 'create-post-actions');
-  });
 });
 
-test.describe('Post - Comment Functionality', () => {
+test.describe('Post - Comments', () => {
 
   test.beforeEach(async ({ homePage }) => {
     await homePage.navigate();
     await homePage.waitForPostsToLoad();
   });
 
-  test('should display comment button on posts', { tag: '@post-comments-001' }, async ({ page }) => {
+  test('should open comment modal when clicking comment button', { tag: '@post-comments-001' }, async ({ page }) => {
     const commentButton = page.getByTestId('comment-button').first();
-    
-    if (await commentButton.isVisible()) {
-      await expect(commentButton).toBeVisible();
+    if (!await commentButton.isVisible()) {
+      test.skip();
+      return;
     }
-  });
 
-  test('should have comment button container test ID', { tag: '@post-comments-002' }, async ({ page }) => {
-    const commentButtonContainer = page.getByTestId('comment-button-container').first();
-    
-    if (await commentButtonContainer.isVisible()) {
-      await expect(commentButtonContainer).toHaveAttribute('data-testid', 'comment-button-container');
-    }
+    await commentButton.click();
+
+    const commentModal = page.getByTestId('comment-modal');
+    await expect(commentModal).toBeVisible({ timeout: 5000 });
   });
 });
