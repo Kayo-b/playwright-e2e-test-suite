@@ -1,93 +1,60 @@
 /**
  * Laya adapter for BrowserIntentEngine.
  *
- * Wraps a Laya `Agent` (or `Router`) behind the framework-agnostic
- * `DecisionEngineAdapter` contract. BrowserIntentEngine never imports `laya-ts`
- * directly -- only this file does -- so swapping in TypeSafe Jev later means
- * writing a sibling adapter, not touching the engine.
+ * Talks to a **local Laya server** (`laya-serve`, from the `laya[serve]` Python
+ * package -- see https://huggingface.co/convaiinnovations/laya) over plain HTTP.
+ * Inference runs entirely on-device in that separate process; this adapter is
+ * just an HTTP client, so BrowserIntentEngine never links against a model
+ * runtime, ONNX, or any Python package directly.
  *
- * `laya-ts` ships ESM-only ("type": "module", no CJS build). It is imported
- * dynamically so this file loads cleanly from a CommonJS TypeScript project;
- * a static `import` would fail with ERR_REQUIRE_ESM once transpiled to `require`.
+ * Start the server once, separately from your Playwright process, e.g.:
+ *
+ *   pip install "laya[serve]"
+ *   laya-serve                 # defaults to http://0.0.0.0:8000
+ *
+ * or with explicit configuration:
+ *
+ *   LAYA_MODELS=english LAYA_HOST=127.0.0.1 LAYA_PORT=8000 laya-serve
+ *
+ * See `lib/browser-intent-engine/IMPLEMENTATION.md` for the full setup guide.
+ *
+ * `laya-serve`'s `POST /v1/systemone` route is deliberately wire-compatible
+ * with TypeSafe Jev's hosted API, so this class is a thin preset over the
+ * shared `SystemOneHttpAdapter` -- see that file for the actual HTTP logic.
  */
+import { SystemOneHttpAdapter } from './SystemOneHttpAdapter.js';
 import type { DecisionAnswer, DecisionEngineAdapter, DecisionPayload } from '../types.js';
 
-/** Minimal shape this adapter needs from a Laya `Agent`/`Router` instance. */
-export interface LayaRunner {
-  predict(
-    state: unknown,
-    questions: Record<string, { type: string; instructions: unknown; criteria: unknown }>,
-  ): Promise<{
-    answers: Record<
-      string,
-      {
-        type: string;
-        choice?: string;
-        confidence: number;
-        answer_confidence: number;
-        probabilities?: Record<string, number>;
-      }
-    >;
-  }>;
-}
-
 export interface LayaDecisionEngineAdapterOptions {
-  /**
-   * Local checkpoint directory or hub repo id forwarded to `Agent.load`, e.g.
-   * "./model" or ("convaiinnovations/laya"). Ignored if `runner` is provided.
-   */
-  modelPathOrRepo?: string;
-  /** Extra options forwarded verbatim to `Agent.load` (device, subfolder, lang_temperatures, ...). */
-  loadOptions?: Record<string, unknown>;
-  /**
-   * Pre-instantiated Laya `Agent`/`Router` (or a test double satisfying `LayaRunner`).
-   * Takes priority over `modelPathOrRepo` and skips lazy loading entirely.
-   */
-  runner?: LayaRunner;
+  /** Root of the running laya-serve instance (default "http://127.0.0.1:8000"). */
+  baseUrl?: string;
+  /** Bearer token, only needed if the server was started with LAYA_API_KEY set. */
+  apiKey?: string;
+  /** Optional model name/alias ("english" | "multilingual" | "typed-decisions" | a repo id). Omit to auto-route. */
+  model?: string;
+  /** Request timeout in milliseconds (default 30000; local inference is normally well under 2s once warm). */
+  timeoutMs?: number;
+  /** Injectable fetch implementation, mainly for tests. */
+  fetchImpl?: typeof fetch;
 }
 
 export class LayaDecisionEngineAdapter implements DecisionEngineAdapter {
   readonly name = 'laya';
 
-  private readonly options: LayaDecisionEngineAdapterOptions;
-  private runnerPromise: Promise<LayaRunner> | null = null;
+  private readonly delegate: SystemOneHttpAdapter;
 
-  constructor(options: LayaDecisionEngineAdapterOptions) {
-    if (!options.runner && !options.modelPathOrRepo) {
-      throw new Error('LayaDecisionEngineAdapter requires either "runner" or "modelPathOrRepo".');
-    }
-    this.options = options;
-  }
-
-  private async getRunner(): Promise<LayaRunner> {
-    if (this.options.runner) return this.options.runner;
-    if (!this.runnerPromise) {
-      this.runnerPromise = (async () => {
-        const { Agent } = await import('laya-ts');
-        return Agent.load(this.options.modelPathOrRepo as string, this.options.loadOptions) as unknown as LayaRunner;
-      })();
-    }
-    return this.runnerPromise;
+  constructor(options: LayaDecisionEngineAdapterOptions = {}) {
+    this.delegate = new SystemOneHttpAdapter({
+      name: this.name,
+      baseUrl: options.baseUrl ?? 'http://127.0.0.1:8000',
+      apiKey: options.apiKey,
+      model: options.model,
+      timeoutMs: options.timeoutMs,
+      fetchImpl: options.fetchImpl,
+    });
   }
 
   async decide(payload: DecisionPayload): Promise<Record<string, DecisionAnswer>> {
-    const runner = await this.getRunner();
-    const result = await runner.predict(payload.state, payload.questions);
-
-    const answers: Record<string, DecisionAnswer> = {};
-    for (const questionId of Object.keys(payload.questions)) {
-      const raw = result.answers[questionId];
-      if (!raw || raw.type !== 'choice' || typeof raw.choice !== 'string') {
-        throw new Error(`LayaDecisionEngineAdapter: no valid choice answer returned for question "${questionId}".`);
-      }
-      answers[questionId] = {
-        questionId,
-        choice: raw.choice,
-        confidence: raw.answer_confidence ?? raw.confidence,
-        probabilities: raw.probabilities,
-        raw,
-      };
-    }
-    return answers;
+    return this.delegate.decide(payload);
   }
 }

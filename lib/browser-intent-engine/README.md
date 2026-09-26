@@ -23,16 +23,29 @@ BrowserIntentEngine
                                    │
                                    ▼
                      DecisionEngineAdapter (interface)
-                          ├── LayaDecisionEngineAdapter  (laya-ts, implemented)
-                          └── JevDecisionEngineAdapter    (placeholder, pending SDK)
+                                   │
+                          SystemOneHttpAdapter (POST /v1/systemone over HTTP)
+                          ├── LayaDecisionEngineAdapter  → local laya-serve (on-device)
+                          └── JevDecisionEngineAdapter   → https://api.typesafe.ai (hosted)
 ```
 
 `BrowserIntentEngine` only ever imports the `DecisionEngineAdapter` interface
-from `types.ts`. Swapping Laya for TypeSafe Jev (or anything else) means
-writing a new adapter class — no changes to extraction, resolution, or action
-execution code.
+from `types.ts`. Both Laya and Jev speak the identical `/v1/systemone` HTTP
+wire protocol (Laya's local server deliberately mirrors Jev's hosted API), so
+both adapters are thin presets over one shared `SystemOneHttpAdapter` — no
+changes to extraction, resolution, or action execution code either way.
 
 ## Usage
+
+Laya runs as a **separate local process**, not embedded in Node. Start it
+once (see `IMPLEMENTATION.md` for full setup):
+
+```bash
+cd /home/kxyx/projects/laya
+LAYA_MODELS=english laya-serve   # http://127.0.0.1:8000 by default
+```
+
+Then, from this repo:
 
 ```ts
 import { chromium } from 'playwright-core';
@@ -42,7 +55,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.goto('https://example.com');
 
-const decisionEngine = new LayaDecisionEngineAdapter({ modelPathOrRepo: './model' });
+const decisionEngine = new LayaDecisionEngineAdapter({ baseUrl: 'http://127.0.0.1:8000' });
 const engine = new BrowserIntentEngine(page, { decisionEngine });
 
 const resolution = await engine.resolveIntent('Click the user profile icon');
@@ -73,15 +86,20 @@ await engine.executeAction(usernameField, { value: 'octocat' });
 
 ## Decision engines
 
-- **Laya** (`LayaDecisionEngineAdapter`): wraps a Laya `Agent`/`Router` from
-  `laya-ts`. The dependency is installed locally via
-  `"laya-ts": "file:../laya/laya-ts"` — replace with a published registry
-  version once Laya is published, and rebuild `laya-ts` (`npm run build` in
-  that package) whenever its sources change, since `file:` installs a snapshot
-  of `dist/`. `laya-ts` is ESM-only, so the adapter loads it via a lazy dynamic
-  `import()` to stay compatible with this repo's CommonJS TypeScript setup.
-- **TypeSafe Jev** (`JevDecisionEngineAdapter`): placeholder that throws until
-  Jev's SDK is available; implement `decide()` there when it lands.
+Both presets below are thin wrappers over `SystemOneHttpAdapter`, a generic
+HTTP client for the `/v1/systemone` wire protocol (state + questions in,
+choice + confidence out) — see `IMPLEMENTATION.md` for how that protocol was
+confirmed to be shared between the two.
+
+- **Laya** (`LayaDecisionEngineAdapter`): talks to a **local `laya-serve`
+  process** (default `http://127.0.0.1:8000`), running Laya entirely
+  on-device. No API key needed unless the server was started with
+  `LAYA_API_KEY` set. Start the server separately (`pip install "laya[serve]"`
+  then `laya-serve`) — it is not managed by this repo.
+- **TypeSafe Jev** (`JevDecisionEngineAdapter`): talks to Jev's **hosted** API
+  (`https://api.typesafe.ai`). Requires a real API key via `{ apiKey }` or the
+  `TYPESAFE_API_KEY` env var (get one at console.typesafe.ai); throws
+  immediately if neither is set.
 
 ## Type-checking
 

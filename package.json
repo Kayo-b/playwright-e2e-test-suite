@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "laya-ts": "file:../laya/laya-ts",
     "playwright": "^1.57.0"
   },
   "devDependencies": {
