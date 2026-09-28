@@ -75,6 +75,9 @@ await engine.executeAction(usernameField, { value: 'octocat' });
 | Option              | Default          | Purpose                                             |
 |---------------------|------------------|------------------------------------------------------|
 | `decisionEngine`     | *(required)*     | The `DecisionEngineAdapter` to query.                |
+| `logging.enabled`    | `false`          | Writes debug logs (DOM extraction + query + decision) to `logs/browser-intent-engine/<run>/`. |
+| `logging.dir`        | `logs/browser-intent-engine` | Root directory for debug logs.          |
+| `logging.runId`      | timestamp at process start | Subfolder grouping one run's calls together. |
 | `selectors.include`  | built-in set     | Extra CSS selectors to scan.                         |
 | `selectors.exclude`  | `[]`             | CSS selectors to always skip.                        |
 | `maxCandidates`      | `150`            | Cap on extracted elements per resolution.            |
@@ -98,8 +101,40 @@ confirmed to be shared between the two.
   then `laya-serve`) — it is not managed by this repo.
 - **TypeSafe Jev** (`JevDecisionEngineAdapter`): talks to Jev's **hosted** API
   (`https://api.typesafe.ai`). Requires a real API key via `{ apiKey }` or the
-  `TYPESAFE_API_KEY` env var (get one at console.typesafe.ai); throws
-  immediately if neither is set.
+  `JEV_API_KEY` env var (the legacy `TYPESAFE_API_KEY` name also works; get a
+  key at console.typesafe.ai); throws immediately if neither is set. Defaults
+  `model` to `"jev-latest"` since, unlike Laya, the hosted API rejects a null
+  model. Put your key in a repo-root `.env` file (gitignored) --
+  `playwright.config.ts` loads it automatically via `process.loadEnvFile()`.
+
+## Debug logging
+
+Set `logging: { enabled: true }` to write, for every `resolveIntent()` /
+`executeAction()` call, exactly what was extracted from the DOM, the exact
+query sent to the decision engine, and its raw answer:
+
+```ts
+const engine = new BrowserIntentEngine(page, {
+  decisionEngine,
+  logging: { enabled: true }, // writes to logs/browser-intent-engine/<run>/
+});
+```
+
+Each run gets its own timestamped folder under `logs/browser-intent-engine/`
+(gitignored) containing:
+
+| File | Contents |
+|---|---|
+| `NNN-<goal-slug>.json` | One full record per `resolveIntent()` call: candidates extracted, exact query payload, raw model answer, final resolution. |
+| `run.jsonl` | Same records, one JSON object per line, for quick `jq`/grep-based analysis. |
+| `run.md` | Human-readable rendering: a candidates table, the JSON query sent to the model, its raw decision, and the resolved outcome, per call. |
+| `actions.jsonl` | One line per `executeAction()` call: which candidate/interaction ran and whether it succeeded. |
+
+Disabled by default, so the mock-based regression suite
+(`tests/browser-intent-engine.spec.ts`) never touches the filesystem.
+`tests/browser-intent-engine.laya-live.spec.ts` and
+`tests/browser-intent-engine.jev-live.spec.ts` both enable it, since those
+are the suites exercising a real page + real model.
 
 ## Type-checking
 

@@ -18,11 +18,13 @@ in-process.
 | `lib/browser-intent-engine/BrowserIntentEngine.ts` | Main class: private `extractCandidates()`, `resolveIntent(goal)`, `executeAction(resolution, opts)` with `.click()/.fill()/.check()/.selectOption()` dispatch. |
 | `lib/browser-intent-engine/adapters/SystemOneHttpAdapter.ts` | Generic HTTP client for the `/v1/systemone` wire protocol. Shared by both presets below. |
 | `lib/browser-intent-engine/adapters/LayaDecisionEngineAdapter.ts` | Thin preset over `SystemOneHttpAdapter` pointed at a **local `laya-serve` process** (default `http://127.0.0.1:8000`). |
-| `lib/browser-intent-engine/adapters/JevDecisionEngineAdapter.ts` | Thin preset over `SystemOneHttpAdapter` pointed at TypeSafe Jev's **hosted** API (`https://api.typesafe.ai`), requiring `TYPESAFE_API_KEY`. |
+| `lib/browser-intent-engine/adapters/JevDecisionEngineAdapter.ts` | Thin preset over `SystemOneHttpAdapter` pointed at TypeSafe Jev's **hosted** API (`https://api.typesafe.ai`), requiring `JEV_API_KEY` (or legacy `TYPESAFE_API_KEY`); defaults `model` to `"jev-latest"`. |
+| `lib/browser-intent-engine/logging.ts` | Opt-in debug logger (`logging: { enabled: true }`): writes what was extracted from the DOM, the exact query sent to the decision engine, and its raw answer to `logs/browser-intent-engine/<run>/` per call. See README.md § Debug logging. |
 | `lib/browser-intent-engine/index.ts` | Barrel export. |
 | `lib/browser-intent-engine/README.md` | Usage guide and options reference. |
 | `tests/browser-intent-engine.spec.ts` | Regression tests against a mock adapter (no server needed). |
-| `tests/browser-intent-engine.laya-live.spec.ts` | Real, non-mocked integration test against a running local `laya-serve` instance (auto-skips if none is reachable). |
+| `tests/browser-intent-engine.laya-live.spec.ts` | Real, non-mocked integration test against a running local `laya-serve` instance and the real live bakery page (auto-skips if no server is reachable). |
+| `tests/browser-intent-engine.jev-live.spec.ts` | Same real-page intents, run against Jev's hosted API instead (auto-skips if no `JEV_API_KEY`/`TYPESAFE_API_KEY` is set). |
 
 It has no dependency on any test runner, assertion library, or self-healing
 test framework beyond using Playwright's `Page`/`Locator` types.
@@ -49,7 +51,7 @@ and `JevDecisionEngineAdapter` are both just presets over it with a different
         │                                                            │
 LayaDecisionEngineAdapter                              JevDecisionEngineAdapter
 baseUrl: http://127.0.0.1:8000                        baseUrl: https://api.typesafe.ai
-(local process, on-device, no API key needed)          (hosted, requires TYPESAFE_API_KEY)
+(local process, on-device, no API key needed)          (hosted, requires JEV_API_KEY)
 ```
 
 Swapping engines is a one-line change in the caller — `BrowserIntentEngine`
@@ -61,8 +63,8 @@ import { BrowserIntentEngine, LayaDecisionEngineAdapter, JevDecisionEngineAdapte
 // Local, on-device:
 const decisionEngine = new LayaDecisionEngineAdapter({ baseUrl: 'http://127.0.0.1:8000' });
 
-// Hosted, once you have credentials:
-// const decisionEngine = new JevDecisionEngineAdapter({ apiKey: process.env.TYPESAFE_API_KEY });
+// Hosted, once you have credentials (JEV_API_KEY in the environment or .env):
+// const decisionEngine = new JevDecisionEngineAdapter({ apiKey: process.env.JEV_API_KEY });
 
 const engine = new BrowserIntentEngine(page, { decisionEngine });
 ```
@@ -137,14 +139,28 @@ checkout page) returned the correct answer with 91% confidence.
 ## TypeSafe Jev — hosted only, no local mode
 
 Unlike Laya, Jev has no on-device/local mode: it is only available via
-`https://api.typesafe.ai`, requires a `TYPESAFE_API_KEY` from
-[console.typesafe.ai](https://console.typesafe.ai), and its only official SDK
-is Python-only (`typesafe-sdk` on PyPI; no TS/JS SDK). `JevDecisionEngineAdapter`
-talks to the same `/v1/systemone` HTTP contract directly (confirmed against
-the published Python SDK's source), so no SDK wrapping was needed — but it
-has not been exercised against the real hosted API since no API key is
-available in this environment. It will throw a clear error at construction
-time if no key is provided.
+`https://api.typesafe.ai`, requires a `JEV_API_KEY` (or legacy
+`TYPESAFE_API_KEY`) from [console.typesafe.ai](https://console.typesafe.ai),
+and its only official SDK is Python-only (`typesafe-sdk` on PyPI; no TS/JS
+SDK). `JevDecisionEngineAdapter` talks to the same `/v1/systemone` HTTP
+contract directly (confirmed against the published Python SDK's source and
+the API quickstart docs), so no SDK wrapping was needed. It will throw a
+clear error at construction time if no key is provided.
+
+**Confirmed working end-to-end** against the real hosted API and the real
+live bakery page (`tests/browser-intent-engine.jev-live.spec.ts`): the wire
+protocol requires an explicit `model` string (unlike Laya's local server,
+which tolerates `null` and auto-routes) -- `JevDecisionEngineAdapter` defaults
+it to `"jev-latest"`, per the quickstart's sample request body.
+
+Put the key in a repo-root `.env` file (gitignored):
+
+```
+JEV_API_KEY=sk-...
+```
+
+`playwright.config.ts` loads it automatically via `process.loadEnvFile()` at
+config-evaluation time, before any test runs.
 
 ## How to run the tests
 
@@ -158,6 +174,10 @@ npx playwright test tests/browser-intent-engine.spec.ts --project=chromium
 # auto-skips with a clear message if none is reachable at LAYA_SERVE_URL
 # (default http://127.0.0.1:8000)
 npx playwright test tests/browser-intent-engine.laya-live.spec.ts --project=chromium
+
+# same real-page intents against Jev's hosted API instead — needs JEV_API_KEY
+# (in the environment or .env); auto-skips with a clear message if unset
+npx playwright test tests/browser-intent-engine.jev-live.spec.ts --project=chromium
 
 # whole suite (includes the pre-existing app e2e tests)
 npx playwright test

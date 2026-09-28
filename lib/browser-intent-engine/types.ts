@@ -7,6 +7,8 @@
  * choice-based model needs to pick an option".
  */
 
+import type { IntentLoggingOptions } from './logging.js';
+
 /** How a resolved candidate should be interacted with once chosen. */
 export type InteractionType = 'click' | 'fill' | 'check' | 'selectOption' | 'unknown';
 
@@ -117,6 +119,12 @@ export interface SelectorFilters {
 export interface BrowserIntentEngineOptions {
   /** The pluggable System 1 decision engine (LayaDecisionEngineAdapter, JevDecisionEngineAdapter, ...). */
   decisionEngine: DecisionEngineAdapter;
+  /**
+   * Debug logging: writes what was extracted from the DOM, the exact query sent
+   * to the decision engine, and its raw answer, to `logs/browser-intent-engine/<runId>/`.
+   * Disabled by default so offline/mock-based tests never touch the filesystem.
+   */
+  logging?: IntentLoggingOptions;
   selectors?: SelectorFilters;
   /** Caps the number of extracted candidates per resolution (default 150). */
   maxCandidates?: number;

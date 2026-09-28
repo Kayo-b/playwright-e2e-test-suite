@@ -1,5 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Loads .env (JEV_API_KEY, etc.) into process.env for local runs; harmless if the
+// file doesn't exist (e.g. CI, where secrets come from real env vars instead).
+try {
+  process.loadEnvFile();
+} catch {
+  // no .env file present -- fine, env vars may already be set another way.
+}
+
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */

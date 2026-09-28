@@ -13,6 +13,7 @@
  */
 import type { Locator, Page } from 'playwright-core';
 import { collectInteractiveElements, type ExtractionParams, type RawCandidate } from './domExtraction.js';
+import { IntentRunLogger } from './logging.js';
 import type {
   ActionExecutionResult,
   ActionOptions,
@@ -90,7 +91,9 @@ function describeCandidate(candidate: DomCandidate): string {
 
 export class BrowserIntentEngine {
   private readonly page: Page;
-  private readonly options: Required<Omit<BrowserIntentEngineOptions, 'selectors'>> & Pick<BrowserIntentEngineOptions, 'selectors'>;
+  private readonly options: Required<Omit<BrowserIntentEngineOptions, 'selectors' | 'logging'>> &
+    Pick<BrowserIntentEngineOptions, 'selectors'>;
+  private readonly logger: IntentRunLogger | null;
 
   constructor(page: Page, options: BrowserIntentEngineOptions) {
     this.page = page;
@@ -104,6 +107,9 @@ export class BrowserIntentEngine {
       textMaxLength: options.textMaxLength ?? DEFAULTS.textMaxLength,
       minConfidence: options.minConfidence ?? DEFAULTS.minConfidence,
     };
+    this.logger = options.logging?.enabled
+      ? new IntentRunLogger({ dir: options.logging.dir, runId: options.logging.runId })
+      : null;
   }
 
   /**
@@ -135,10 +141,11 @@ export class BrowserIntentEngine {
    *   Options   = one description per candidate
    */
   async resolveIntent(goal: string, questionId: string = DEFAULT_QUESTION_ID): Promise<IntentResolutionResult> {
+    const url = this.page.url();
     const candidates = await this.extractCandidates();
 
     if (candidates.length === 0) {
-      return {
+      const resolution: IntentResolutionResult = {
         goal,
         matched: false,
         candidateId: null,
@@ -147,30 +154,44 @@ export class BrowserIntentEngine {
         engine: this.options.decisionEngine.name,
         reason: 'no-candidates',
       };
+      this.logger?.logResolution({
+        goal,
+        questionId,
+        url,
+        engine: this.options.decisionEngine.name,
+        candidates,
+        payload: { state: { url, elements: [] }, questions: {} },
+        answer: null,
+        resolution,
+      });
+      return resolution;
     }
 
     const criteria: Record<string, string> = {};
     for (const candidate of candidates) criteria[candidate.id] = describeCandidate(candidate);
 
     const state = {
-      url: this.page.url(),
+      url,
       elements: candidates.map((candidate) => ({ id: candidate.id, description: criteria[candidate.id] })),
     };
 
-    const answers = await this.options.decisionEngine.decide({
+    // The exact query handed to the decision engine: State + Question + Options.
+    const payload = {
       state,
       questions: {
         [questionId]: {
-          type: 'choice',
+          type: 'choice' as const,
           instructions: goal,
           criteria,
         },
       },
-    });
+    };
+
+    const answers = await this.options.decisionEngine.decide(payload);
 
     const answer = answers[questionId];
     if (!answer) {
-      return {
+      const resolution: IntentResolutionResult = {
         goal,
         matched: false,
         candidateId: null,
@@ -179,12 +200,23 @@ export class BrowserIntentEngine {
         engine: this.options.decisionEngine.name,
         reason: 'engine-error',
       };
+      this.logger?.logResolution({
+        goal,
+        questionId,
+        url,
+        engine: this.options.decisionEngine.name,
+        candidates,
+        payload,
+        answer: null,
+        resolution,
+      });
+      return resolution;
     }
 
     const candidate = candidates.find((c) => c.id === answer.choice) ?? null;
     const belowThreshold = answer.confidence < this.options.minConfidence;
 
-    return {
+    const resolution: IntentResolutionResult = {
       goal,
       matched: candidate !== null && !belowThreshold,
       candidateId: candidate ? answer.choice : null,
@@ -195,6 +227,9 @@ export class BrowserIntentEngine {
       reason: candidate === null ? 'unknown-choice' : belowThreshold ? 'below-min-confidence' : undefined,
       raw: answer.raw,
     };
+
+    this.logger?.logResolution({ goal, questionId, url, engine: this.options.decisionEngine.name, candidates, payload, answer, resolution });
+    return resolution;
   }
 
   /** Re-locates the live element a resolution points at, via its marker attribute. */
@@ -220,34 +255,54 @@ export class BrowserIntentEngine {
     const timeout = actionOptions.timeoutMs ?? this.options.actionTimeoutMs;
     const locator = this.locatorFor(candidateId);
 
-    switch (candidate.interactionType) {
-      case 'fill': {
-        if (actionOptions.value === undefined) {
-          throw new Error(`BrowserIntentEngine.executeAction: candidate "${candidateId}" requires "value" to fill.`);
+    try {
+      switch (candidate.interactionType) {
+        case 'fill': {
+          if (actionOptions.value === undefined) {
+            throw new Error(`BrowserIntentEngine.executeAction: candidate "${candidateId}" requires "value" to fill.`);
+          }
+          await locator.fill(actionOptions.value, { timeout });
+          break;
         }
-        await locator.fill(actionOptions.value, { timeout });
-        break;
-      }
-      case 'selectOption': {
-        if (actionOptions.value === undefined) {
-          throw new Error(`BrowserIntentEngine.executeAction: candidate "${candidateId}" requires "value" to select.`);
+        case 'selectOption': {
+          if (actionOptions.value === undefined) {
+            throw new Error(`BrowserIntentEngine.executeAction: candidate "${candidateId}" requires "value" to select.`);
+          }
+          await locator.selectOption(actionOptions.value, { timeout });
+          break;
         }
-        await locator.selectOption(actionOptions.value, { timeout });
-        break;
+        case 'check': {
+          const desiredChecked = actionOptions.checked ?? true;
+          if (desiredChecked) await locator.check({ timeout });
+          else await locator.uncheck({ timeout });
+          break;
+        }
+        case 'click':
+        case 'unknown':
+        default: {
+          await locator.click({ timeout });
+          break;
+        }
       }
-      case 'check': {
-        const desiredChecked = actionOptions.checked ?? true;
-        if (desiredChecked) await locator.check({ timeout });
-        else await locator.uncheck({ timeout });
-        break;
-      }
-      case 'click':
-      case 'unknown':
-      default: {
-        await locator.click({ timeout });
-        break;
-      }
+    } catch (err) {
+      this.logger?.logAction({
+        goal: resolution.goal,
+        candidateId,
+        interactionType: candidate.interactionType,
+        actionOptions,
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
     }
+
+    this.logger?.logAction({
+      goal: resolution.goal,
+      candidateId,
+      interactionType: candidate.interactionType,
+      actionOptions,
+      success: true,
+    });
 
     // Best-effort hygiene: don't leave marker attributes behind on the live page.
     await locator.evaluate((el, attr) => el.removeAttribute(attr), this.options.markerAttribute).catch(() => undefined);
